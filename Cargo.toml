@@ -1,0 +1,12 @@
+[package]
+name = "real_time_dedup"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+hyperloglog = "1.0.2"
+rand = "0.8"
+rayon = "1.7"
+redis = "0.23"
+rdkafka = { version = "0.34", features = ["cmake-build"] }
+chrono = "0.4"
