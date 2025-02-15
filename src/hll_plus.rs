@@ -1,6 +1,5 @@
 use std::collections::HashSet;
 
- // For improved accuracy with small counts
 pub struct HyperLogLogPlus {
     registers: Vec<u8>,
     hash_set: HashSet<u64>,
@@ -17,7 +16,7 @@ impl HyperLogLogPlus {
     pub fn insert(&mut self, value: u64) {
         self.hash_set.insert(value);
 
-        let hash = value.wrapping_mul(11400714819323198549)
+        let hash = value.wrapping_mul(11400714819323198549);
         let index = (hash % self.registers.len() as u64) as usize;
         let leading_zeros = hash.leading_zeros() as u8 + 1;
         self.registers[index] = self.registers[index].max(leading_zeros);
@@ -32,5 +31,9 @@ impl HyperLogLogPlus {
             return self.hash_set.len();
         }
         estimate
+    }
+
+    pub fn get_unique_count(&self) -> usize {
+        self.hash_set.len()
     }
 }

@@ -1,25 +1,42 @@
-use rand::Rng;
+use std::time::{SystemTime, UNIX_EPOCH};
 use rdkafka::producer::{FutureProducer, FutureRecord};
 use rdkafka::ClientConfig;
-use tokio::time::Duration;
+use tokio::time::{sleep, Duration};
 
 #[tokio::main]
 async fn main() {
     let producer: FutureProducer = ClientConfig::new()
         .set("bootstrap.servers", "localhost:9092")
         .create()
-        .expect("Failed to create Kafka producer");
+        .expect("Producer creation failed");
 
-    let mut rng = rand::thread_rng();
+    println!("Starting Kafka Producer...");
 
-    for _ in 0..1_000_000 {
-        let user_id: u64 = rng.gen();
-        let record = FutureRecord::to("user_events")
-            .key("")
-            .payload(&user_id.to_string());
+    for i in 0..1000 {
+        let now = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("Time error")
+            .as_millis();
 
-        producer.send(record, Duration::from_secs(0)).await.expect("Failed to send message");
+        let message = format!("event_{}:{}", i, now);
+        let key = hash_payload(&message).to_string();
+
+        let _ = producer.send(
+            FutureRecord::to("test-topic")
+                .key(&key)
+                .payload(&message),
+            Duration::from_secs(0),
+        ).await;
+
+        println!("Produced message: {}", message);
+        sleep(Duration::from_millis(10)).await;
     }
+}
 
-    println!("Produced 1M user events to Kafka!");
+fn hash_payload(payload: &str) -> u64 {
+    let mut hash = 5381u64;
+    for byte in payload.as_bytes() {
+        hash = (hash.wrapping_shl(5)).wrapping_add(hash) ^ (*byte as u64);
+    }
+    hash
 }
